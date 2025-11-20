@@ -4,47 +4,59 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.*
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
-import java.io.OutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var photoView: ImageView
-    private lateinit var btnTakePhoto: Button
-    private lateinit var btnMakeVspPhoto: Button
-    private lateinit var btnMakeAtmPhoto: Button
-    private lateinit var btnSendZip: Button
+    // UI
+    private lateinit var btnVSP: Button
+    private lateinit var btnATM: Button
+    private lateinit var btnIVI: Button
+    private lateinit var btnSVN: Button
+    private lateinit var btnTV: Button
+    private lateinit var btnITS: Button
+    private lateinit var btnTD: Button
+
     private lateinit var btnOpenGallery: Button
+    private lateinit var btnSendZip: Button
+    private lateinit var imgPreview: ImageView
 
     private var currentPhotoUri: Uri? = null
 
-    private var useVspName = false
-    private var useAtmName = false
-
+    // Запрос камеры
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) openCamera()
+            if (granted && pendingPrefix != null) {
+                openCameraWithPrefix(pendingPrefix!!)
+            }
         }
 
+    private var pendingPrefix: String? = null
+
+    // Камера
     private val takePictureLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            if (success) {
-                currentPhotoUri?.let { applyTimestampToImage(it) }
+            if (success && currentPhotoUri != null) {
+
+                // Добавляем штамп
+                TimeStampUtil.addTimestamp(this, currentPhotoUri!!)
+
                 updatePhotoCount()
+                Toast.makeText(this, "Фото сохранено", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -52,63 +64,56 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        photoView = findViewById(R.id.photoView)
-        btnTakePhoto = findViewById(R.id.btnTakePhoto)
-        btnMakeVspPhoto = findViewById(R.id.btnMakeVspPhoto)
-        btnMakeAtmPhoto = findViewById(R.id.btnMakeAtmPhoto)
-        btnSendZip = findViewById(R.id.btnSendZip)
+        imgPreview = findViewById(R.id.imgPreview)
+
+        btnVSP = findViewById(R.id.btnVSP)
+        btnATM = findViewById(R.id.btnATM)
+        btnIVI = findViewById(R.id.btnIVI)
+        btnSVN = findViewById(R.id.btnSVN)
+        btnTV = findViewById(R.id.btnTV)
+        btnITS = findViewById(R.id.btnITS)
+        btnTD = findViewById(R.id.btnTD)
+
         btnOpenGallery = findViewById(R.id.btnOpenGallery)
+        btnSendZip = findViewById(R.id.btnSendZip)
 
-        // Убираем превью
-        photoView.setImageDrawable(null)
+        // навешиваем обработчики
+        btnVSP.setOnClickListener { takePhotoWithPrefix("VSP") }
+        btnATM.setOnClickListener { takePhotoWithPrefix("ATM") }
+        btnIVI.setOnClickListener { takePhotoWithPrefix("IVI") }
+        btnSVN.setOnClickListener { takePhotoWithPrefix("SVN") }
+        btnTV.setOnClickListener { takePhotoWithPrefix("TV") }
+        btnITS.setOnClickListener { takePhotoWithPrefix("ITS") }
+        btnTD.setOnClickListener { takePhotoWithPrefix("TD") }
 
-        btnTakePhoto.setOnClickListener {
-            useVspName = false
-            useAtmName = false
-            checkCameraPermission()
-        }
-
-        btnMakeVspPhoto.setOnClickListener {
-            useVspName = true
-            useAtmName = false
-            checkCameraPermission()
-        }
-
-        btnMakeAtmPhoto.setOnClickListener {
-            useVspName = false
-            useAtmName = true
-            checkCameraPermission()
+        btnOpenGallery.setOnClickListener {
+            startActivity(Intent(this, GalleryActivity::class.java))
         }
 
         btnSendZip.setOnClickListener {
             sendAllPhotosZip()
         }
 
-        btnOpenGallery.setOnClickListener {
-            startActivity(Intent(this, GalleryActivity::class.java))
-        }
-
         updatePhotoCount()
     }
 
-    private fun checkCameraPermission() {
+    // ----------- ЛОГИКА СЪЁМКИ --------------
+
+    private fun takePhotoWithPrefix(prefix: String) {
+        pendingPrefix = prefix
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED
         ) {
-            openCamera()
+            openCameraWithPrefix(prefix)
         } else {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
-    private fun openCamera() {
+    private fun openCameraWithPrefix(prefix: String) {
         val resolver = contentResolver
-
-        val filename = when {
-            useVspName -> "VSP_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".jpg"
-            useAtmName -> "ATM_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".jpg"
-            else -> "photo_${System.currentTimeMillis()}.jpg"
-        }
+        val filename = "${prefix}_${System.currentTimeMillis()}.jpg"
 
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, filename)
@@ -116,58 +121,56 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/VSPView")
         }
 
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        currentPhotoUri = uri
+        currentPhotoUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
-        // Сбрасываем флаги
-        useVspName = false
-        useAtmName = false
-
-        takePictureLauncher.launch(uri)
+        takePictureLauncher.launch(currentPhotoUri)
     }
 
-    private fun applyTimestampToImage(uri: Uri) {
-        val inputStream = contentResolver.openInputStream(uri) ?: return
-        val originalBitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-
-        val outputBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(outputBitmap)
-
-        val text = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-        val paint = Paint().apply {
-            color = Color.WHITE
-            textSize = 48f
-            style = Paint.Style.FILL
-            setShadowLayer(4f, 2f, 2f, Color.BLACK)
-        }
-
-        canvas.drawText(text, 30f, outputBitmap.height - 40f, paint)
-
-        val outputStream: OutputStream? = contentResolver.openOutputStream(uri, "w")
-        outputStream?.use {
-            outputBitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
-        }
-    }
-
-    private fun updatePhotoCount() {
-        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-
-        val cursor = contentResolver.query(
-            collection,
-            arrayOf(MediaStore.Images.Media._ID),
-            "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?",
-            arrayOf("Pictures/VSPView%"),
-            null
-        )
-
-        val count = cursor?.count ?: 0
-        cursor?.close()
-
-        btnOpenGallery.text = "Открыть галерею ($count)"
-    }
+    // ----------- ZIP ОТПРАВКА ----------------
 
     private fun sendAllPhotosZip() {
+        val photos = getAllPhotos()
+
+        if (photos.isEmpty()) {
+            Toast.makeText(this, "Нет фото для отправки", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val zipFile = File(cacheDir, "photos.zip")
+        val fos = FileOutputStream(zipFile)
+        val zos = ZipOutputStream(fos)
+
+        photos.forEach { uri ->
+            val input = contentResolver.openInputStream(uri) ?: return@forEach
+
+            val name = getFileName(uri)
+            zos.putNextEntry(ZipEntry(name))
+
+            input.copyTo(zos)
+            input.close()
+            zos.closeEntry()
+        }
+
+        zos.close()
+        fos.close()
+
+        val zipUri = FileProvider.getUriForFile(
+            this,
+            "$packageName.fileprovider",
+            zipFile
+        )
+
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/zip"
+            putExtra(Intent.EXTRA_STREAM, zipUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        startActivity(Intent.createChooser(sendIntent, "Отправить ZIP"))
+    }
+
+    private fun getAllPhotos(): List<Uri> {
+        val list = mutableListOf<Uri>()
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
         val cursor = contentResolver.query(
@@ -178,36 +181,41 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
-        if (cursor == null || cursor.count == 0) return
-
-        val zipFile = File(cacheDir, "photos.zip")
-        val zipOut = ZipOutputStream(FileOutputStream(zipFile))
-
-        cursor.use {
-            val idIndex = cursor.getColumnIndex(MediaStore.Images.Media._ID)
-            val nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idIndex)
-                val name = cursor.getString(nameIndex)
-
+        cursor?.use {
+            val idIndex = it.getColumnIndex(MediaStore.Images.Media._ID)
+            while (it.moveToNext()) {
+                val id = it.getLong(idIndex)
                 val uri = Uri.withAppendedPath(collection, id.toString())
-                val input = contentResolver.openInputStream(uri) ?: continue
-
-                zipOut.putNextEntry(ZipEntry(name))
-                input.copyTo(zipOut)
-                zipOut.closeEntry()
-                input.close()
+                list.add(uri)
             }
         }
 
-        zipOut.close()
+        return list
+    }
 
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/zip"
-            putExtra(Intent.EXTRA_STREAM, Uri.fromFile(zipFile))
+    private fun getFileName(uri: Uri): String {
+        val cursor = contentResolver.query(
+            uri,
+            arrayOf(MediaStore.Images.Media.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )
+
+        var name = "unknown.jpg"
+
+        cursor?.use {
+            if (it.moveToFirst()) {
+                name = it.getString(0)
+            }
         }
+        return name
+    }
 
-        startActivity(Intent.createChooser(shareIntent, "Отправить ZIP"))
+    // ----------- СЧЁТЧИК ФОТО ----------------
+
+    private fun updatePhotoCount() {
+        val count = getAllPhotos().size
+        btnOpenGallery.text = "Открыть галерею ($count)"
     }
 }

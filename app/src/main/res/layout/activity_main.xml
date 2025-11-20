@@ -1,54 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="20dp"
-    android:gravity="center_horizontal"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#F3F4F6">
+    android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/photoView"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
-        android:scaleType="centerCrop"
-        android:background="@drawable/rounded_bg"
-        android:padding="6dp"
-        android:contentDescription="Preview"
-        android:layout_marginBottom="20dp" />
-
-    <Button
-        android:id="@+id/btnTakePhoto"
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Сделать фото"
-        android:layout_marginBottom="12dp" />
+        android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/btnMakeVspPhoto"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Общий вид ВСП"
-        android:layout_marginBottom="12dp" />
+        <!-- Превью (если понадобится позже) -->
+        <ImageView
+            android:id="@+id/imgPreview"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:background="#E0E0E0"
+            android:contentDescription="preview" />
 
-    <Button
-        android:id="@+id/btnMakeAtmPhoto"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="УС"
-        android:layout_marginBottom="12dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp">
 
-    <Button
-        android:id="@+id/btnSendZip"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Отправить все фото ZIP"
-        android:layout_marginBottom="12dp" />
+            <!-- Сетка кнопок -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:rowCount="5">
 
-    <Button
-        android:id="@+id/btnOpenGallery"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Открыть галерею (0)" />
+                <!-- VSP -->
+                <Button
+                    android:id="@+id/btnVSP"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="Общий вид ВСП" />
 
-</LinearLayout>
+                <!-- ATM -->
+                <Button
+                    android:id="@+id/btnATM"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="УС / ATM" />
+
+                <!-- IVI -->
+                <Button
+                    android:id="@+id/btnIVI"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="Ivideon" />
+
+                <!-- SVN -->
+                <Button
+                    android:id="@+id/btnSVN"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="СВН" />
+
+                <!-- TV -->
+                <Button
+                    android:id="@+id/btnTV"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="ТВ" />
+
+                <!-- ITS -->
+                <Button
+                    android:id="@+id/btnITS"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="ИТ Шкаф" />
+
+                <!-- TD -->
+                <Button
+                    android:id="@+id/btnTD"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="Точка доступа" />
+
+                <!-- Открыть галерею -->
+                <Button
+                    android:id="@+id/btnOpenGallery"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="Открыть галерею" />
+
+                <!-- ZIP -->
+                <Button
+                    android:id="@+id/btnSendZip"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:text="Отправить ZIP" />
+
+            </GridLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
